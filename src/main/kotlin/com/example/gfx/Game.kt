@@ -14,6 +14,8 @@ import javafx.scene.paint.Color
 import javafx.scene.control.Button
 import javafx.scene.control.TextInputDialog
 import javafx.scene.control.ButtonType
+import javafx.scene.control.Dialog
+import javafx.scene.control.ButtonBar
 import javafx.scene.layout.VBox
 import javafx.scene.layout.Pane
 import javafx.stage.Stage
@@ -22,6 +24,7 @@ import javafx.geometry.Insets
 import com.example.game.World
 import com.example.game.Snake
 import com.example.util.Vector3
+import java.io.File
 
 class Game : Application() {
     companion object {
@@ -31,6 +34,8 @@ class Game : Application() {
         const val SPEED_MULTIPLIER = 2L
     }
 
+    lateinit var gameLoop: AnimationTimer
+    val leaderboardFile = File("leaderboard.dat")
     lateinit var stage: Stage
     val gameScene: Scene by lazy { initGameScene() }
     val menuScene: Scene by lazy { initMenuScene() }
@@ -43,6 +48,31 @@ class Game : Application() {
     var lastUpdate: Long = 0L
     lateinit var pendingDir: Vector3
     lateinit var graphicsContext: GraphicsContext
+
+    fun showGameOverDialog() {
+        Platform.runLater {
+            val dialog = Dialog<ButtonType>().apply {
+                title = "Game Over"
+                headerText = """
+                    Game Over!
+                    Player: $playerName
+                    Final Score: ${world.snake.body.size}
+                """.trimIndent()
+                dialogPane.buttonTypes.addAll(
+                    ButtonType("Play Again", ButtonBar.ButtonData.OK_DONE),
+                    ButtonType("Main Menu", ButtonBar.ButtonData.CANCEL_CLOSE)
+                )
+            }
+
+            val result = dialog.showAndWait()
+            result.ifPresent { 
+                when (it.buttonData) {
+                    ButtonBar.ButtonData.OK_DONE -> initGame()
+                    else -> stage.scene = menuScene
+                }
+            }
+        }
+    }
 
     fun showPlayerNameDialog() {
         val dialog = TextInputDialog().apply {
@@ -143,10 +173,17 @@ class Game : Application() {
         graphicsContext = canvas.getGraphicsContext2D()
 
         // Main loop
-        object : AnimationTimer() {
+        gameLoop = object : AnimationTimer() {
             override fun handle(currentNanoTime: Long) {
                 val now = System.nanoTime()
-                if (world.running && now - lastUpdate >= frameTime) {
+
+                if (!world.running) {
+                    gameLoop.stop()
+                    saveScore()
+                    showGameOverDialog()
+                }
+
+                if (now - lastUpdate >= frameTime) {
                     // Update
                     world.snake.changeDirection(pendingDir)
                     world.tick()
@@ -163,7 +200,11 @@ class Game : Application() {
                     lastUpdate = now
                 }
             }
-        }.start()
+        }.also {it.start()}
+    }
+
+    fun saveScore() {
+        leaderboardFile.appendText("${world.playerName},${world.snake.body.size}\n")
     }
 
     override fun start(mainStage: Stage) {        
@@ -172,66 +213,5 @@ class Game : Application() {
             scene = menuScene
             show()
         }
-        
-        // Setup
-        // world.setup()
-        // pendingDir = world.snake.dir
-        // world.start()
-
-        // // Main loop
-        // object : AnimationTimer() {
-        //     override fun handle(currentNanoTime: Long) {
-        //         val now = System.nanoTime()
-        //         if (now - lastUpdate >= frameTime) {
-        //             // Update
-        //             world.snake.changeDirection(pendingDir)
-        //             world.tick()
-    
-        //             // Draw
-        //             graphicsContext.fill = Color.BEIGE
-        //             graphicsContext.fillRect(0.0, 0.0, WIDTH.toDouble(), HEIGHT.toDouble())
-        //             world.snake.draw(graphicsContext, World.CELL_SIZE)
-        //             world.food.draw(graphicsContext, World.CELL_SIZE)
-        //             for (wall in world.walls) wall.draw(graphicsContext, World.CELL_SIZE)
-        //             graphicsContext.fill = Color.BLACK
-        //             graphicsContext.fillText("Points: ${world.snake.body.size}", 3.0, HEIGHT.toDouble() - 3.0) // TODO: remove magic constants
-
-        //             lastUpdate = now
-        //         }
-        //     }
-        // }.start()
-
-        // mainStage.show()
     }
-
-    // private fun setupGameInputHandling(Scene gameScene) {
-    //     gameScene.setOnKeyPressed { event ->
-    //         when (event.code) {
-    //             KeyCode.W -> pendingDir = Vector3(0, -1, 0)
-    //             KeyCode.S -> pendingDir = Vector3(0, 1, 0)
-    //             KeyCode.A -> pendingDir = Vector3(-1, 0, 0)
-    //             KeyCode.D -> pendingDir = Vector3(1, 0, 0)
-    //             KeyCode.P -> world.togglePause()
-    //             KeyCode.SPACE -> {
-    //                 if (!spacePressed) {
-    //                     spacePressed = true
-    //                     frameTime /= 2
-    //                 }
-    //             }
-    //             else -> {}
-    //         }
-    //     }
-
-    //     gameScene.setOnKeyReleased { event ->
-    //         when (event.code) {
-    //             KeyCode.SPACE -> {
-    //                 if (spacePressed) {
-    //                     spacePressed = false
-    //                     frameTime *= 2
-    //                 }
-    //             }
-    //             else -> {}
-    //         }
-    //     }
-    // }
 }

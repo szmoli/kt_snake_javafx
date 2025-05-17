@@ -1,3 +1,7 @@
 /.idea
 /.gradle
 /build
+/gradle
+/.kotlin
+/bin
+leaderboard.dat
