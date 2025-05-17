@@ -9,15 +9,17 @@ class World(val size: Vector3) {
     lateinit var snake: Snake
     lateinit var food: Food
     lateinit var walls: List<Wall>
+    lateinit var playerName: String
     
     companion object {
         const val CELL_SIZE = 20.0
     }
 
-    fun setup() {
+    fun setup(playerName: String) {
         snake = Snake(size / 2) // Start the snake in the middle of the world
         walls = generateWalls()
         food = generateFood()
+        this.playerName = playerName
     }
 
     fun start() {
@@ -34,7 +36,7 @@ class World(val size: Vector3) {
     }
 
     fun reset() {
-        setup()
+        setup(playerName)
         running = false
     }
 
