@@ -14,8 +14,10 @@ import javafx.scene.paint.Color
 import javafx.scene.control.Button
 import javafx.scene.control.TextInputDialog
 import javafx.scene.control.ButtonType
+import javafx.scene.control.Label
 import javafx.scene.control.Dialog
 import javafx.scene.control.ButtonBar
+import javafx.scene.control.ListView
 import javafx.scene.layout.VBox
 import javafx.scene.layout.Pane
 import javafx.stage.Stage
@@ -39,7 +41,7 @@ class Game : Application() {
     lateinit var stage: Stage
     val gameScene: Scene by lazy { initGameScene() }
     val menuScene: Scene by lazy { initMenuScene() }
-    lateinit var leaderboardScene: Scene
+    val leaderboardScene: Scene by lazy { initLeaderboardScene() }
 
     lateinit var playerName: String
     var frameTime = Game.BASE_FRAME_TIME
@@ -108,7 +110,7 @@ class Game : Application() {
 
         val leaderboardButton = Button("Leaderboard").apply {
             style = "-fx-font-size: 20;"
-            // setOnAction { showLeaderboardScene() }
+            setOnAction { stage.scene = leaderboardScene }
         }
 
         val exitButton = Button("Exit").apply {
@@ -163,6 +165,48 @@ class Game : Application() {
             }
         }
     }
+
+    fun initLeaderboardScene(): Scene {
+        // Load and format scores
+        val scores = try {
+            leaderboardFile.readLines()
+                .mapNotNull { line ->
+                    line.split(",").takeIf { it.size == 2 }
+                        ?.let { (name, score) -> 
+                            "%-15s %5d".format(name, score.toIntOrNull() ?: 0) 
+                        }
+                }
+                .sortedByDescending { it.substring(16).trim().toIntOrNull() ?: 0 }
+        } catch (e: Exception) {
+            listOf("No scores yet!")
+        }
+    
+        // Create ListView with explicit type parameter
+        val scoreList = ListView<String>().apply {
+            items.setAll(if (scores.isEmpty()) listOf("No scores yet!") else scores)
+            style = "-fx-font-family: monospace; -fx-font-size: 14pt;"
+            prefHeight = 400.0
+        }
+    
+        val backButton = Button("Back to Menu").apply {
+            style = "-fx-font-size: 20;"
+            setOnAction { stage.scene = menuScene }
+        }
+    
+        val layout = VBox(20.0).apply {
+            alignment = Pos.CENTER
+            children.addAll(
+                Label("Leaderboard").apply {
+                    style = "-fx-font-size: 24pt; -fx-font-weight: bold;"
+                },
+                scoreList,
+                backButton
+            )
+            padding = Insets(20.0)
+        }
+    
+        return Scene(layout, 600.0, 600.0)
+    }    
 
     fun initGame() {
         world.setup(playerName)
