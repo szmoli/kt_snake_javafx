@@ -26,6 +26,7 @@ import javafx.geometry.Insets
 import com.example.game.World
 import com.example.game.Snake
 import com.example.util.Vector3
+import com.example.util.Leaderboard
 import java.io.File
 
 class Game : Application() {
@@ -167,21 +168,10 @@ class Game : Application() {
     }
 
     fun initLeaderboardScene(): Scene {
-        // Load and format scores
-        val scores = try {
-            leaderboardFile.readLines()
-                .mapNotNull { line ->
-                    line.split(",").takeIf { it.size == 2 }
-                        ?.let { (name, score) -> 
-                            "%-15s %5d".format(name, score.toIntOrNull() ?: 0) 
-                        }
-                }
-                .sortedByDescending { it.substring(16).trim().toIntOrNull() ?: 0 }
-        } catch (e: Exception) {
-            listOf("No scores yet!")
+        val scores = Leaderboard.getTopScores().map { score ->
+            "%-15s %5d".format(score.playerName, score.score)
         }
-    
-        // Create ListView with explicit type parameter
+
         val scoreList = ListView<String>().apply {
             items.setAll(if (scores.isEmpty()) listOf("No scores yet!") else scores)
             style = "-fx-font-family: monospace; -fx-font-size: 14pt;"
@@ -206,7 +196,7 @@ class Game : Application() {
         }
     
         return Scene(layout, 600.0, 600.0)
-    }    
+    }   
 
     fun initGame() {
         world.setup(playerName)
@@ -223,7 +213,7 @@ class Game : Application() {
 
                 if (!world.running) {
                     gameLoop.stop()
-                    saveScore()
+                    Leaderboard.addToLeaderboard(Leaderboard.Score(playerName, world.snake.body.size))
                     showGameOverDialog()
                 }
 
@@ -245,10 +235,6 @@ class Game : Application() {
                 }
             }
         }.also {it.start()}
-    }
-
-    fun saveScore() {
-        leaderboardFile.appendText("${world.playerName},${world.snake.body.size}\n")
     }
 
     override fun start(mainStage: Stage) {        

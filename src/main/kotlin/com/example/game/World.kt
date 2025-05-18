@@ -1,6 +1,7 @@
 package com.example.game
 
 import kotlin.random.Random
+import com.example.util.Leaderboard
 import com.example.util.Vector3
 
 class World(val size: Vector3) {
@@ -10,7 +11,7 @@ class World(val size: Vector3) {
     lateinit var food: Food
     lateinit var walls: List<Wall>
     lateinit var playerName: String
-    
+
     companion object {
         const val CELL_SIZE = 20.0
     }
