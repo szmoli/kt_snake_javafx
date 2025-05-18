@@ -63,7 +63,7 @@ class Game : Application() {
                 """.trimIndent()
                 dialogPane.buttonTypes.addAll(
                     ButtonType("Play Again", ButtonBar.ButtonData.OK_DONE),
-                    ButtonType("Main Menu", ButtonBar.ButtonData.CANCEL_CLOSE)
+                    ButtonType("Show Leaderboard", ButtonBar.ButtonData.CANCEL_CLOSE)
                 )
             }
 
@@ -71,7 +71,7 @@ class Game : Application() {
             result.ifPresent { 
                 when (it.buttonData) {
                     ButtonBar.ButtonData.OK_DONE -> initGame()
-                    else -> stage.scene = menuScene
+                    else -> stage.scene = leaderboardScene
                 }
             }
         }
